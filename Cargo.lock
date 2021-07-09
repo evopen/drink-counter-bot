@@ -301,6 +301,7 @@ name = "drink-counter-bot"
 version = "0.1.0"
 dependencies = [
  "dotenv",
+ "lazy_static",
  "teloxide",
  "tokio",
 ]
