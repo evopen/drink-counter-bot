@@ -22,7 +22,7 @@ async fn main() {
     // let db: Arc<Mutex<HashMap<i64, u32>>>  = Arc::new(Mutex::new(HashMap::new()));
 
     teloxide::repl(bot, |a| async move {
-        let buttons = vec![KeyboardButton::new("🚰咚咚咚"), KeyboardButton::new("重置")];
+        let buttons = vec![KeyboardButton::new("🚰吨吨吨"), KeyboardButton::new("重置")];
         let keyboard_markup = KeyboardMarkup::new(vec![buttons]);
         let id = a.chat_id();
         if let Some(s) = a.update.text() {
@@ -30,7 +30,7 @@ async fn main() {
                 "重置" => {
                     HASHMAP.lock().unwrap().insert(id, 0);
                 }
-                "🚰咚咚咚" => {
+                "🚰吨吨吨" => {
                     let prev = HASHMAP
                         .lock()
                         .unwrap()
