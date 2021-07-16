@@ -1,7 +1,12 @@
-FROM rust
+FROM docker.io/archlinux:base-devel
 
-RUN git clone https://github.com/evopen/drink-counter-bot
+# RUN apt-get update
+# RUN apt-get install -y ca-certificates
+# RUN update-ca-certificates
 
-WORKDIR drink-counter-bot
+COPY ./target/release/drink-counter-bot /bin/
 
-RUN cargo install --path .
+ENV TELOXIDE_TOKEN=NONE
+
+ENTRYPOINT ["/bin/drink-counter-bot"]
+

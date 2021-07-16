@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use teloxide::payloads::SendMessageSetters;
-use teloxide::prelude::*;
-use teloxide::types::{KeyboardButton, KeyboardMarkup, ReplyMarkup};
+use tbot::contexts::fields::Message;
+use tbot::contexts::methods::ChatMethods;
+use tbot::proxy::{Intercept, Proxy};
+
 #[macro_use]
 extern crate lazy_static;
 
@@ -16,31 +17,38 @@ lazy_static! {
 
 #[tokio::main]
 async fn main() {
+    env_logger::builder()
+        .filter_level(log::LevelFilter::Info)
+        .init();
+    log::info!("starting");
     dotenv::dotenv().ok();
-    let bot = Bot::from_env().auto_send();
 
-    // let db: Arc<Mutex<HashMap<i64, u32>>>  = Arc::new(Mutex::new(HashMap::new()));
+    let bot = match std::env::var("HTTPS_PROXY") {
+        Ok(proxy) => {
+            let proxy = Proxy::new(Intercept::All, proxy.parse().unwrap());
+            tbot::Bot::with_proxy(std::env::var("TOKEN").unwrap(), proxy)
+        }
+        Err(_) => tbot::Bot::new(std::env::var("TOKEN").unwrap()),
+    };
+    let mut bot = bot.event_loop();
+    println!("qqaa");
 
-    teloxide::repl(bot, |a| async move {
-        let buttons = vec![KeyboardButton::new("🚰吨吨吨"), KeyboardButton::new("重置")];
-        let keyboard_markup = KeyboardMarkup::new(vec![buttons]);
-        let id = a.chat_id();
-        if let Some(s) = a.update.text() {
-            match s {
-                "重置" => {
-                    HASHMAP.lock().unwrap().insert(id, 0);
-                }
-                "🚰吨吨吨" => {
-                    let prev = HASHMAP
-                        .lock()
-                        .unwrap()
-                        .get(&id)
-                        .map(|b| *b)
-                        .unwrap_or_default();
-                    HASHMAP.lock().unwrap().insert(id, prev + 1);
-                }
-                _ => {}
+    bot.text(|context| async move {
+        let id = context.chat().id.0;
+        match context.text.value.as_str() {
+            "重置" => {
+                HASHMAP.lock().unwrap().insert(id, 0);
             }
+            "🚰吨吨吨" => {
+                let prev = HASHMAP
+                    .lock()
+                    .unwrap()
+                    .get(&id)
+                    .map(|b| *b)
+                    .unwrap_or_default();
+                HASHMAP.lock().unwrap().insert(id, prev + 1);
+            }
+            _ => {}
         }
 
         let count = HASHMAP
@@ -49,12 +57,12 @@ async fn main() {
             .get(&id)
             .map(|b| *b)
             .unwrap_or_default();
-        a.answer(format!("{}杯", count))
-            .reply_markup(ReplyMarkup::Keyboard(keyboard_markup))
+        context
+            .send_message_in_reply(&format!("{}杯", count))
+            .call()
             .await
             .unwrap();
+    });
 
-        respond(())
-    })
-    .await;
+    bot.polling().start().await.unwrap();
 }
